@@ -22,9 +22,11 @@ public class KitchenController {
      * Returns all PENDING and PREPARING orders for the given branch.
      */
     @GetMapping("/branch/{branchId}")
-    public ResponseEntity<List<KitchenOrderResponse>> getKitchenOrders(@PathVariable Long branchId) {
+    public ResponseEntity<List<KitchenOrderResponse>> getKitchenOrders(
+            @PathVariable Long branchId,
+            @RequestParam(required = false) List<Long> categoryIds) {
         tenantSecurity.verifyBranchAccess(branchId);
-        return ResponseEntity.ok(kitchenService.getKitchenOrders(branchId));
+        return ResponseEntity.ok(kitchenService.getKitchenOrders(branchId, categoryIds));
     }
 
     /**

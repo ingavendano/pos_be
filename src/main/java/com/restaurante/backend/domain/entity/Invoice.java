@@ -63,4 +63,17 @@ public class Invoice {
 
     @Column(length = 40)
     private String receptionSello;
+
+    @Column(length = 20)
+    @Builder.Default
+    private String dteStatus = "PENDING";
+
+    @Column(columnDefinition = "TEXT")
+    private String dteJson;
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
+
+    @Column(length = 40)
+    private String invalidationSello;
 }

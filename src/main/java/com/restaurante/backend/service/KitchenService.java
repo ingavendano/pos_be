@@ -20,10 +20,16 @@ public class KitchenService {
     private final OrderRepository orderRepository;
 
     @Transactional(readOnly = true)
-    public List<KitchenOrderResponse> getKitchenOrders(Long branchId) {
-        return orderRepository.findKitchenOrdersByBranchId(branchId)
-                .stream()
-                .map(this::mapToKitchenResponse)
+    public List<KitchenOrderResponse> getKitchenOrders(Long branchId, List<Long> categoryIds) {
+        List<Order> orders;
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            orders = orderRepository.findKitchenOrdersByBranchId(branchId);
+        } else {
+            orders = orderRepository.findKitchenOrdersByBranchIdAndCategories(branchId, categoryIds);
+        }
+
+        return orders.stream()
+                .map(order -> mapToKitchenResponse(order, categoryIds))
                 .collect(Collectors.toList());
     }
 
@@ -49,10 +55,10 @@ public class KitchenService {
             });
         }
 
-        return mapToKitchenResponse(orderRepository.save(order));
+        return mapToKitchenResponse(orderRepository.save(order), null);
     }
 
-    private KitchenOrderResponse mapToKitchenResponse(Order order) {
+    private KitchenOrderResponse mapToKitchenResponse(Order order, List<Long> categoryIds) {
         long minutesElapsed = order.getCreatedAt() != null
                 ? Duration.between(order.getCreatedAt(), LocalDateTime.now()).toMinutes()
                 : 0;
@@ -60,6 +66,9 @@ public class KitchenService {
         List<KitchenOrderResponse.KitchenItemResponse> items = order.getItems() == null
                 ? List.of()
                 : order.getItems().stream()
+                        .filter(item -> categoryIds == null || categoryIds.isEmpty() ||
+                                (item.getProduct() != null && item.getProduct().getCategory() != null &&
+                                        categoryIds.contains(item.getProduct().getCategory().getId())))
                         .map(this::mapItem)
                         .collect(Collectors.toList());
 

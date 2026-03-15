@@ -1,5 +1,6 @@
 package com.restaurante.backend.service.impl;
 
+import com.restaurante.backend.domain.dto.CategoryDTO;
 import com.restaurante.backend.domain.entity.Category;
 import com.restaurante.backend.domain.entity.Tenant;
 import com.restaurante.backend.repository.CategoryRepository;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -22,39 +24,56 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public Category createCategory(Long tenantId, Category category) {
+    public CategoryDTO createCategory(Long tenantId, CategoryDTO categoryDTO) {
         Tenant tenant = tenantRepository.findById(tenantId)
                 .orElseThrow(() -> new com.restaurante.backend.exception.ResourceNotFoundException("Tenant not found"));
-        category.setTenant(tenant);
-        return categoryRepository.save(category);
+        
+        Category category = Category.builder()
+                .name(categoryDTO.getName())
+                .description(categoryDTO.getDescription())
+                .tenant(tenant)
+                .build();
+                
+        return mapToDTO(categoryRepository.save(category));
     }
 
     @Override
     @Transactional
-    public Category updateCategory(Long id, Category categoryDetails) {
+    public CategoryDTO updateCategory(Long id, CategoryDTO categoryDTO) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(
                         () -> new com.restaurante.backend.exception.ResourceNotFoundException("Category not found"));
 
-        category.setName(categoryDetails.getName());
-        category.setDescription(categoryDetails.getDescription());
+        category.setName(categoryDTO.getName());
+        category.setDescription(categoryDTO.getDescription());
 
-        return categoryRepository.save(category);
+        return mapToDTO(categoryRepository.save(category));
     }
 
     @Override
-    public Optional<Category> getCategoryById(Long id) {
-        return categoryRepository.findById(id);
+    public Optional<CategoryDTO> getCategoryById(Long id) {
+        return categoryRepository.findById(id).map(this::mapToDTO);
     }
 
     @Override
-    public List<Category> getCategoriesByTenantId(Long tenantId) {
-        return categoryRepository.findByTenantId(tenantId);
+    public List<CategoryDTO> getCategoriesByTenantId(Long tenantId) {
+        return categoryRepository.findByTenantId(tenantId).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
     public void deleteCategory(Long id) {
         categoryRepository.deleteById(id);
+    }
+
+    private CategoryDTO mapToDTO(Category category) {
+        return CategoryDTO.builder()
+                .id(category.getId())
+                .name(category.getName())
+                .description(category.getDescription())
+                .tenantId(category.getTenant().getId())
+                .build();
     }
 }

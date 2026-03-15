@@ -22,4 +22,6 @@ public class InvoiceDto {
     private String generationCode;
     private String controlNumber;
     private String receptionSello;
+    private String dteStatus;
+    private String rejectionReason;
 }

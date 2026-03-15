@@ -44,6 +44,13 @@ public class DtoMapper {
                 .nit(customer.getNit())
                 .email(customer.getEmail())
                 .phone(customer.getPhone())
+                .nrc(customer.getNrc())
+                .giro(customer.getGiro())
+                .documentType(customer.getDocumentType())
+                .documentNumber(customer.getDocumentNumber())
+                .departamento(customer.getDepartamento())
+                .municipio(customer.getMunicipio())
+                .complemento(customer.getComplemento())
                 .build();
     }
 
@@ -62,6 +69,8 @@ public class DtoMapper {
                 .generationCode(invoice.getGenerationCode())
                 .controlNumber(invoice.getControlNumber())
                 .receptionSello(invoice.getReceptionSello())
+                .dteStatus(invoice.getDteStatus())
+                .rejectionReason(invoice.getRejectionReason())
                 .build();
     }
 
@@ -86,5 +95,17 @@ public class DtoMapper {
         return items.stream()
                 .map(DtoMapper::toOrderItemDto)
                 .collect(Collectors.toList());
+    }
+
+    public static ExpenseDto toExpenseDto(com.restaurante.backend.domain.entity.Expense expense) {
+        if (expense == null)
+            return null;
+        return ExpenseDto.builder()
+                .id(expense.getId())
+                .description(expense.getDescription())
+                .amount(expense.getAmount())
+                .category(expense.getCategory())
+                .expenseDate(expense.getExpenseDate())
+                .build();
     }
 }

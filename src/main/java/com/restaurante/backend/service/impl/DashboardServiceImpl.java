@@ -25,6 +25,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final OrderRepository orderRepository;
     private final RestaurantTableRepository tableRepository;
     private final ProductRepository productRepository;
+    private final com.restaurante.backend.service.InventoryService inventoryService;
 
     @Override
     public DashboardSummaryResponse getDashboardSummary(Long branchId, Long tenantId) {
@@ -53,10 +54,15 @@ public class DashboardServiceImpl implements DashboardService {
                 .limit(10)
                 .collect(Collectors.toList());
 
-        // 3. Low Stock Products
-        List<Product> products = productRepository.findByTenantId(tenantId);
-        List<Product> lowStockProducts = products.stream()
-                .filter(p -> p.getQuantity() != null && p.getMinStock() != null && p.getQuantity() <= p.getMinStock())
+        // 3. Low Stock Products (Source of Truth from Inventory)
+        List<Product> lowStockProducts = inventoryService.getLowStockAlerts(tenantId).stream()
+                .map(inv -> {
+                    Product p = inv.getProduct();
+                    // Ensure the quantity returned to dashboard is the actual inventory quantity
+                    p.setQuantity(inv.getQuantity());
+                    return p;
+                })
+                .distinct()
                 .limit(10)
                 .collect(Collectors.toList());
 

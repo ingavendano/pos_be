@@ -1,6 +1,6 @@
 package com.restaurante.backend.controller;
 
-import com.restaurante.backend.domain.entity.Category;
+import com.restaurante.backend.domain.dto.CategoryDTO;
 import com.restaurante.backend.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,25 +17,25 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping("/tenant/{tenantId}")
-    public ResponseEntity<Category> createCategory(@PathVariable Long tenantId, @RequestBody Category category) {
-        return new ResponseEntity<>(categoryService.createCategory(tenantId, category), HttpStatus.CREATED);
+    public ResponseEntity<CategoryDTO> createCategory(@PathVariable Long tenantId, @RequestBody CategoryDTO categoryDTO) {
+        return new ResponseEntity<>(categoryService.createCategory(tenantId, categoryDTO), HttpStatus.CREATED);
     }
 
     @GetMapping("/tenant/{tenantId}")
-    public ResponseEntity<List<Category>> getCategoriesByTenantId(@PathVariable Long tenantId) {
+    public ResponseEntity<List<CategoryDTO>> getCategoriesByTenantId(@PathVariable Long tenantId) {
         return ResponseEntity.ok(categoryService.getCategoriesByTenantId(tenantId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Long id) {
+    public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
         return categoryService.getCategoryById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(@PathVariable Long id, @RequestBody Category category) {
-        return ResponseEntity.ok(categoryService.updateCategory(id, category));
+    public ResponseEntity<CategoryDTO> updateCategory(@PathVariable Long id, @RequestBody CategoryDTO categoryDTO) {
+        return ResponseEntity.ok(categoryService.updateCategory(id, categoryDTO));
     }
 
     @DeleteMapping("/{id}")

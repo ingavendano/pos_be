@@ -1,18 +1,18 @@
 package com.restaurante.backend.service;
 
-import com.restaurante.backend.domain.entity.Category;
+import com.restaurante.backend.domain.dto.CategoryDTO;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface CategoryService {
-    Category createCategory(Long tenantId, Category category);
+    CategoryDTO createCategory(Long tenantId, CategoryDTO categoryDTO);
 
-    Category updateCategory(Long id, Category categoryDetails);
+    CategoryDTO updateCategory(Long id, CategoryDTO categoryDTO);
 
-    Optional<Category> getCategoryById(Long id);
+    Optional<CategoryDTO> getCategoryById(Long id);
 
-    List<Category> getCategoriesByTenantId(Long tenantId);
+    List<CategoryDTO> getCategoriesByTenantId(Long tenantId);
 
     void deleteCategory(Long id);
 }

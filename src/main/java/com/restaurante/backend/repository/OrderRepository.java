@@ -40,7 +40,20 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
      * eagerly fetching table, user (waiter), and items + product names.
      * Ordered oldest first so urgency is clear.
      */
-    @EntityGraph(attributePaths = { "restaurantTable", "user", "items", "items.product" })
+    @EntityGraph(attributePaths = { "restaurantTable", "user", "items", "items.product", "items.product.category" })
+    @Query("SELECT DISTINCT o FROM Order o JOIN o.items i WHERE o.branch.id = :branchId " +
+            "AND o.status IN ('PENDING', 'PREPARING') " +
+            "AND i.product.category.id IN :categoryIds " +
+            "ORDER BY o.createdAt ASC")
+    List<Order> findKitchenOrdersByBranchIdAndCategories(@Param("branchId") Long branchId,
+            @Param("categoryIds") List<Long> categoryIds);
+
+    /**
+     * Kitchen Display query: load orders that are PENDING or PREPARING,
+     * eagerly fetching table, user (waiter), and items + product names.
+     * Ordered oldest first so urgency is clear.
+     */
+    @EntityGraph(attributePaths = { "restaurantTable", "user", "items", "items.product", "items.product.category" })
     @Query("SELECT o FROM Order o WHERE o.branch.id = :branchId " +
             "AND o.status IN ('PENDING', 'PREPARING') " +
             "ORDER BY o.createdAt ASC")
@@ -48,4 +61,13 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @EntityGraph(attributePaths = { "restaurantTable", "user", "items", "items.product" })
     Optional<Order> findWithItemsById(Long id);
+
+    @Query("SELECT SUM(item.quantity * p.productionCost) " +
+            "FROM Invoice inv JOIN inv.order o JOIN o.items item JOIN item.product p " +
+            "WHERE o.branch.id = :branchId " +
+            "AND inv.issuedAt BETWEEN :from AND :to")
+    java.util.Optional<java.math.BigDecimal> calculateCogsByBranchAndDateRange(
+            @Param("branchId") Long branchId,
+            @Param("from") java.time.LocalDateTime from,
+            @Param("to") java.time.LocalDateTime to);
 }

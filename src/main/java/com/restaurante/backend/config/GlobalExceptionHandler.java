@@ -1,5 +1,6 @@
 package com.restaurante.backend.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,29 +15,32 @@ import java.util.Map;
  * responses.
  */
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<Map<String, Object>> handleSecurityException(SecurityException ex) {
-        ex.printStackTrace(); // Added for debugging the 403 error
+        log.error("Security exception: {}", ex.getMessage(), ex);
         return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
     @ExceptionHandler(com.restaurante.backend.exception.ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFoundException(
             com.restaurante.backend.exception.ResourceNotFoundException ex) {
+        log.warn("Resource not found: {}", ex.getMessage());
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
     @ExceptionHandler(com.restaurante.backend.exception.BusinessLogicException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessLogicException(
             com.restaurante.backend.exception.BusinessLogicException ex) {
+        log.warn("Business logic exception: {}", ex.getMessage());
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
-        ex.printStackTrace(); // Added for debugging
+        log.error("Unexpected runtime exception: ", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Ha ocurrido un error inesperado en el servidor.");
     }
 

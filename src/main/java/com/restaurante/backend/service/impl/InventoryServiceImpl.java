@@ -68,6 +68,11 @@ public class InventoryServiceImpl implements InventoryService {
         inventory.setQuantity(inventory.getQuantity() + delta);
         inventoryRepository.save(inventory);
 
+        // Sync product level quantity (global cache for POS)
+        Product p = inventory.getProduct();
+        p.setQuantity((p.getQuantity() != null ? p.getQuantity() : 0) + delta);
+        productRepository.save(p);
+
         User user = userId != null ? userRepository.findById(userId).orElse(null) : null;
         StockMovement movement = StockMovement.builder()
                 .inventory(inventory)

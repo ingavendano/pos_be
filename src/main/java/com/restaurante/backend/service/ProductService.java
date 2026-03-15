@@ -1,22 +1,22 @@
 package com.restaurante.backend.service;
 
-import com.restaurante.backend.domain.entity.Product;
+import com.restaurante.backend.domain.dto.ProductDTO;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface ProductService {
-    Product createProduct(Long tenantId, Long categoryId, Product product);
+    ProductDTO createProduct(Long tenantId, Long categoryId, ProductDTO productDTO);
 
-    Product updateProduct(Long id, Long categoryId, Product productDetails);
+    ProductDTO updateProduct(Long id, Long categoryId, ProductDTO productDTO);
 
-    Optional<Product> getProductById(Long id);
+    Optional<ProductDTO> getProductById(Long id);
 
-    Product restockProduct(Long id, Integer quantityToAdd);
+    ProductDTO restockProduct(Long id, Integer quantityToAdd);
 
-    List<Product> getProductsByTenantId(Long tenantId);
+    List<ProductDTO> getProductsByTenantId(Long tenantId);
 
-    List<Product> getProductsByCategoryId(Long categoryId);
+    List<ProductDTO> getProductsByCategoryId(Long categoryId);
 
     void deleteProduct(Long id);
 }

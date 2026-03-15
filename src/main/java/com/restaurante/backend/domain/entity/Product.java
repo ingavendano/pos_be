@@ -41,6 +41,14 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "is_sellable", nullable = false)
+    @Builder.Default
+    private Boolean isSellable = true;
+
+    @Column(name = "production_cost", precision = 10, scale = 2)
+    @Builder.Default
+    private BigDecimal productionCost = BigDecimal.ZERO;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })

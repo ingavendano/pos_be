@@ -1,0 +1,1 @@
+ALTER TABLE products ADD COLUMN production_cost DECIMAL(10, 2) DEFAULT 0.00;

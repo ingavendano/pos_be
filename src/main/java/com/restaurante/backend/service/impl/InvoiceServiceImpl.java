@@ -4,6 +4,7 @@ import com.restaurante.backend.domain.entity.Invoice;
 import com.restaurante.backend.domain.entity.InvoiceTax;
 import com.restaurante.backend.domain.entity.Order;
 import com.restaurante.backend.domain.entity.Tax;
+import com.restaurante.backend.domain.entity.TaxType;
 import com.restaurante.backend.repository.InvoiceRepository;
 import com.restaurante.backend.repository.InvoiceTaxRepository;
 import com.restaurante.backend.repository.OrderRepository;
@@ -22,12 +23,14 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@lombok.extern.slf4j.Slf4j
 public class InvoiceServiceImpl implements InvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final InvoiceTaxRepository invoiceTaxRepository;
     private final OrderRepository orderRepository;
     private final TaxRepository taxRepository;
+    private final com.restaurante.backend.service.DteService dteService;
 
     @Override
     @Transactional
@@ -45,15 +48,21 @@ public class InvoiceServiceImpl implements InvoiceService {
 
         BigDecimal subtotal = order.getTotal();
         BigDecimal totalCalculatedTax = BigDecimal.ZERO;
+        BigDecimal totalCalculatedRetention = BigDecimal.ZERO;
 
-        // Calculate the total based on Subtotal + all active taxes (like IVA + Propina)
+        // Calculate the total based on Subtotal + STANDARD + TIP - RETENTION
         for (Tax tax : activeTaxes) {
             BigDecimal taxAmount = subtotal.multiply(tax.getPercentage()).divide(new BigDecimal("100"), 2,
                     RoundingMode.HALF_UP);
-            totalCalculatedTax = totalCalculatedTax.add(taxAmount);
+
+            if (tax.getType() == TaxType.RETENTION) {
+                totalCalculatedRetention = totalCalculatedRetention.add(taxAmount);
+            } else {
+                totalCalculatedTax = totalCalculatedTax.add(taxAmount);
+            }
         }
 
-        BigDecimal grandTotal = subtotal.add(totalCalculatedTax);
+        BigDecimal grandTotal = subtotal.add(totalCalculatedTax).subtract(totalCalculatedRetention);
 
         // FE Logic Placeholder (El Salvador)
         String generationCode = UUID.randomUUID().toString().toUpperCase();
@@ -75,6 +84,20 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .build();
 
         Invoice savedInvoice = invoiceRepository.save(invoice);
+        
+        // DTE Integration
+        try {
+            String json = dteService.generateAndSignDte(savedInvoice);
+            savedInvoice.setDteJson(json);
+            dteService.transmitDte(savedInvoice);
+            invoiceRepository.save(savedInvoice);
+        } catch (Exception e) {
+            log.error("DTE processing failed for invoice {}: {}", savedInvoice.getId(), e.getMessage());
+            savedInvoice.setDteStatus("DTE_REJECTED");
+            savedInvoice.setRejectionReason(e.getMessage());
+            invoiceRepository.save(savedInvoice);
+        }
+
         order.setInvoice(savedInvoice);
 
         // Save historic tax details for this invoice

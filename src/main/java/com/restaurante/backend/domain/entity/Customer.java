@@ -25,9 +25,30 @@ public class Customer {
     @Column
     private String email;
 
-    /** NIT (Guatemala) / RFC (Mexico) / RUC etc. */
-    @Column
+    @Column(length = 20)
     private String nit;
+
+    /** NRC (Solo para Crédito Fiscal) */
+    @Column(length = 30)
+    private String nrc;
+
+    @Column(length = 200)
+    private String giro;
+
+    @Column(length = 20)
+    private String documentType;
+
+    @Column(length = 20)
+    private String documentNumber;
+
+    @Column(length = 2)
+    private String departamento;
+
+    @Column(length = 2)
+    private String municipio;
+
+    @Column(length = 255)
+    private String complemento;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tenant_id", nullable = false)

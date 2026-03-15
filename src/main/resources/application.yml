@@ -20,14 +20,14 @@ spring:
     show-sql: ${SHOW_SQL:true}
     properties:
       hibernate:
-        format_sql: ${SHOW_SQL:true}
+        "[format_sql]": ${SHOW_SQL:true}
         dialect: org.hibernate.dialect.PostgreSQLDialect
         # Global batch-fetch size: Hibernate will load collections in groups
         # of this size instead of one query per entity — major N+1 reduction
-        default_batch_fetch_size: 25
+        "[default_batch_fetch_size]": 25
         # Batch inserts/updates for better write performance
         jdbc:
-          batch_size: 25
+          "[batch_size]": 25
           order_inserts: true
           order_updates: true
 

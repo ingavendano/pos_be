@@ -16,6 +16,8 @@ import com.restaurante.backend.repository.ProductRepository;
 import com.restaurante.backend.repository.RestaurantTableRepository;
 import com.restaurante.backend.repository.UserRepository;
 import com.restaurante.backend.repository.WarehouseRepository;
+import com.restaurante.backend.repository.ProductRecipeRepository;
+import com.restaurante.backend.domain.entity.ProductRecipe;
 import com.restaurante.backend.service.InventoryService;
 import com.restaurante.backend.service.InvoiceService;
 import com.restaurante.backend.service.NotificationService;
@@ -40,6 +42,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
     private final WarehouseRepository warehouseRepository;
+    private final ProductRecipeRepository recipeRepository;
     private final InventoryService inventoryService;
     private final InvoiceService invoiceService;
     private final NotificationService notificationService;
@@ -297,6 +300,8 @@ public class OrderServiceImpl implements OrderService {
     /** Helper to find the default warehouse for a branch and adjust inventory */
     private void processInventoryAdjustment(Long branchId, Long productId, int quantity,
             StockMovement.MovementType type, String reason, Long userId) {
+        
+        // 1. Deduct the product itself (standard behavior + syncs POS quantity)
         Warehouse warehouse = warehouseRepository.findFirstByBranchIdAndIsDefaultTrue(branchId)
                 .orElseGet(() -> {
                     List<Warehouse> list = warehouseRepository.findByBranchId(branchId);
@@ -308,5 +313,20 @@ public class OrderServiceImpl implements OrderService {
                 });
 
         inventoryService.adjustStock(warehouse.getId(), productId, quantity, type, reason, userId);
+
+        // 2. If it has a recipe (or it's a combo), deduct each component recursively
+        List<ProductRecipe> recipes = recipeRepository.findByProductId(productId);
+        
+        if (recipes != null && !recipes.isEmpty()) {
+            for (ProductRecipe recipe : recipes) {
+                // Calculate quantity needed (recipe quantity * amount sold)
+                int quantityNeeded = recipe.getQuantity().multiply(java.math.BigDecimal.valueOf(quantity)).intValue();
+                
+                if (quantityNeeded > 0) {
+                    processInventoryAdjustment(branchId, recipe.getIngredient().getId(), quantityNeeded, type, 
+                        reason + " (Ingrediente de: " + productId + ")", userId);
+                }
+            }
+        }
     }
 }

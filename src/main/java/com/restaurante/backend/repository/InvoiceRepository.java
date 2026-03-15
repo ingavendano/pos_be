@@ -115,4 +115,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
                         @Param("method") String method,
                         @Param("from") LocalDateTime from,
                         @Param("to") LocalDateTime to);
+
+        @Query("SELECT SUM(i.total) FROM Invoice i " +
+                        "WHERE i.order.branch.id = :branchId " +
+                        "AND i.issuedAt BETWEEN :from AND :to")
+        Optional<BigDecimal> sumTotalByBranchAndDateRange(
+                        @Param("branchId") Long branchId,
+                        @Param("from") LocalDateTime from,
+                        @Param("to") LocalDateTime to);
 }
