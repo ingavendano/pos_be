@@ -7,6 +7,7 @@ import com.restaurante.backend.exception.ResourceNotFoundException;
 import com.restaurante.backend.repository.ProductRecipeRepository;
 import com.restaurante.backend.repository.ProductRepository;
 import com.restaurante.backend.repository.TenantRepository;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.RecipeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class RecipeServiceImpl implements RecipeService {
     private final ProductRecipeRepository recipeRepository;
     private final ProductRepository productRepository;
     private final TenantRepository tenantRepository;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     public List<ProductRecipe> getRecipesByProduct(Long productId) {
@@ -54,10 +56,11 @@ public class RecipeServiceImpl implements RecipeService {
     @Override
     @Transactional
     public void removeIngredientFromRecipe(Long recipeId) {
-        ProductRecipe recipe = recipeRepository.findById(recipeId)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        ProductRecipe recipe = recipeRepository.findByIdAndTenantId(recipeId, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("Recipe item not found"));
         Product product = recipe.getProduct();
-        recipeRepository.deleteById(recipeId);
+        recipeRepository.deleteByIdAndTenantId(recipeId, tenantId);
         updateProductProductionCost(product);
     }
 

@@ -4,6 +4,7 @@ import com.restaurante.backend.domain.entity.Customer;
 import com.restaurante.backend.domain.entity.Tenant;
 import com.restaurante.backend.repository.CustomerRepository;
 import com.restaurante.backend.repository.TenantRepository;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerRepository customerRepository;
     private final TenantRepository tenantRepository;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     public List<Customer> getAll(Long tenantId) {
@@ -32,7 +34,8 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public Optional<Customer> getById(Long id) {
-        return customerRepository.findById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        return customerRepository.findByIdAndTenantId(id, tenantId);
     }
 
     @Override
@@ -47,7 +50,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     @Transactional
     public Customer update(Long id, Customer updated) {
-        Customer existing = customerRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Customer existing = customerRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(
                         () -> new com.restaurante.backend.exception.ResourceNotFoundException("Customer not found"));
         existing.setName(updated.getName());
@@ -60,6 +64,7 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     @Transactional
     public void delete(Long id) {
-        customerRepository.deleteById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        customerRepository.deleteByIdAndTenantId(id, tenantId);
     }
 }

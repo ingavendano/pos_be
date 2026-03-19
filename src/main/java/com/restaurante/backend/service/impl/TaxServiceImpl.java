@@ -4,6 +4,7 @@ import com.restaurante.backend.domain.entity.Tax;
 import com.restaurante.backend.domain.entity.Tenant;
 import com.restaurante.backend.repository.TaxRepository;
 import com.restaurante.backend.repository.TenantRepository;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.TaxService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class TaxServiceImpl implements TaxService {
 
     private final TaxRepository taxRepository;
     private final TenantRepository tenantRepository;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     @Transactional
@@ -32,7 +34,8 @@ public class TaxServiceImpl implements TaxService {
     @Override
     @Transactional
     public Tax updateTax(Long id, Tax taxDetails) {
-        Tax tax = taxRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Tax tax = taxRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new com.restaurante.backend.exception.ResourceNotFoundException("Tax not found"));
 
         tax.setName(taxDetails.getName());
@@ -44,7 +47,8 @@ public class TaxServiceImpl implements TaxService {
 
     @Override
     public Optional<Tax> getTaxById(Long id) {
-        return taxRepository.findById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        return taxRepository.findByIdAndTenantId(id, tenantId);
     }
 
     @Override
@@ -60,6 +64,7 @@ public class TaxServiceImpl implements TaxService {
     @Override
     @Transactional
     public void deleteTax(Long id) {
-        taxRepository.deleteById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        taxRepository.deleteByIdAndTenantId(id, tenantId);
     }
 }

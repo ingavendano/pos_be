@@ -6,6 +6,7 @@ import com.restaurante.backend.dto.DtoMapper;
 import com.restaurante.backend.dto.ExpenseDto;
 import com.restaurante.backend.repository.BranchRepository;
 import com.restaurante.backend.repository.ExpenseRepository;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.ExpenseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final BranchRepository branchRepository;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     @Transactional
@@ -58,6 +60,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @Transactional
     public void deleteExpense(Long id) {
-        expenseRepository.deleteById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        expenseRepository.deleteByIdAndTenantId(id, tenantId);
     }
 }

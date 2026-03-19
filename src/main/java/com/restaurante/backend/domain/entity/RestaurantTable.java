@@ -25,6 +25,14 @@ public class RestaurantTable {
     @Column(nullable = false)
     private Integer capacity;
 
+    @Column(name = "posx", nullable = false)
+    @Builder.Default
+    private Integer posX = 0;
+
+    @Column(name = "posy", nullable = false)
+    @Builder.Default
+    private Integer posY = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;

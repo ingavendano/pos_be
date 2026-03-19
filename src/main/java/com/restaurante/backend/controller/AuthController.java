@@ -13,9 +13,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,19 +43,38 @@ public class AuthController {
         String jwt = jwtUtil.generateToken(userDetails);
         String refreshToken = jwtUtil.generateRefreshToken(userDetails);
 
-        AuthResponse response = AuthResponse.builder()
-                .token(jwt)
-                .refreshToken(refreshToken)
-                .type("Bearer")
-                .id(userDetails.getId())
-                .username(userDetails.getUsername())
-                .name(userDetails.getName())
-                .role(userDetails.getRoleName())
-                .tenantId(userDetails.getTenantId())
-                .branchId(userDetails.getBranchId())
-                .branchName(userDetails.getBranchName())
-                .permissions(userDetails.getPermissions())
-                .build();
+        AuthResponse response = buildAuthResponse(userDetails, jwt, refreshToken);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /api/auth/me
+     *
+     * Retorna los datos actualizados del usuario autenticado, incluyendo
+     * permisos y rol frescos desde la base de datos.
+     *
+     * Úsalo desde el frontend al iniciar la app para refrescar el estado
+     * del usuario sin obligarlo a hacer login de nuevo.
+     *
+     * Requiere: Authorization: Bearer <token> en el header.
+     * Responde: 200 con AuthResponse actualizado, o 401 si el token es inválido.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<AuthResponse> me(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        // Recargamos desde la DB para obtener permisos y rol frescos
+        CustomUserDetails freshDetails = (CustomUserDetails) userDetailsService
+                .loadUserByUsername(userDetails.getUsername());
+
+        // Generamos un token nuevo con los datos frescos (rota el token silenciosamente)
+        String newToken = jwtUtil.generateToken(freshDetails);
+        String newRefreshToken = jwtUtil.generateRefreshToken(freshDetails);
+
+        AuthResponse response = buildAuthResponse(freshDetails, newToken, newRefreshToken);
 
         return ResponseEntity.ok(response);
     }
@@ -66,24 +87,12 @@ public class AuthController {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
             if (jwtUtil.validateToken(requestRefreshToken, userDetails)) {
-                String newAccessToken = jwtUtil.generateToken(userDetails);
-                String newRefreshToken = jwtUtil.generateRefreshToken(userDetails); // Optionally rotate refresh token
-
                 CustomUserDetails customUser = (CustomUserDetails) userDetails;
 
-                AuthResponse response = AuthResponse.builder()
-                        .token(newAccessToken)
-                        .refreshToken(newRefreshToken)
-                        .type("Bearer")
-                        .id(customUser.getId())
-                        .username(customUser.getUsername())
-                        .name(customUser.getName())
-                        .role(customUser.getRoleName())
-                        .tenantId(customUser.getTenantId())
-                        .branchId(customUser.getBranchId())
-                        .branchName(customUser.getBranchName())
-                        .permissions(customUser.getPermissions())
-                        .build();
+                String newAccessToken = jwtUtil.generateToken(customUser);
+                String newRefreshToken = jwtUtil.generateRefreshToken(customUser); // Rotate refresh token
+
+                AuthResponse response = buildAuthResponse(customUser, newAccessToken, newRefreshToken);
 
                 return ResponseEntity.ok(response);
             }
@@ -93,5 +102,23 @@ public class AuthController {
         }
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+    // ── Helper ────────────────────────────────────────────────────────────────
+
+    private AuthResponse buildAuthResponse(CustomUserDetails user, String token, String refreshToken) {
+        return AuthResponse.builder()
+                .token(token)
+                .refreshToken(refreshToken)
+                .type("Bearer")
+                .id(user.getId())
+                .username(user.getUsername())
+                .name(user.getName())
+                .role(user.getRoleName())
+                .tenantId(user.getTenantId())
+                .branchId(user.getBranchId())
+                .branchName(user.getBranchName())
+                .permissions(user.getPermissions())
+                .build();
     }
 }

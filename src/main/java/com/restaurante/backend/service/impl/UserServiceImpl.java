@@ -9,6 +9,7 @@ import com.restaurante.backend.repository.BranchRepository;
 import com.restaurante.backend.repository.RoleRepository;
 import com.restaurante.backend.repository.TenantRepository;
 import com.restaurante.backend.repository.UserRepository;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,6 +29,7 @@ public class UserServiceImpl implements UserService {
     private final BranchRepository branchRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     @Transactional
@@ -69,7 +71,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User updateUser(Long id, Long branchId, User userDetails) {
-        User user = userRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        User user = userRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (userDetails.getName() != null) {
@@ -117,7 +120,8 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        return userRepository.findByIdAndTenantId(id, tenantId);
     }
 
     @Override
@@ -138,7 +142,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deactivateUser(Long id) {
-        User user = userRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        User user = userRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         user.setIsActive(false);
         userRepository.save(user);

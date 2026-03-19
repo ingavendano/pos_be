@@ -10,6 +10,8 @@ import com.restaurante.backend.repository.CategoryRepository;
 import com.restaurante.backend.repository.ProductRepository;
 import com.restaurante.backend.repository.TenantRepository;
 import com.restaurante.backend.repository.WarehouseRepository;
+import com.restaurante.backend.security.TenantSecurityService;
+import com.restaurante.backend.security.CustomUserDetails;
 import com.restaurante.backend.service.InventoryService;
 import com.restaurante.backend.service.ProductService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class ProductServiceImpl implements ProductService {
     private final WarehouseRepository warehouseRepository;
     private final InventoryService inventoryService;
     private final UserRepository userRepository;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     @Transactional
@@ -81,8 +84,8 @@ public class ProductServiceImpl implements ProductService {
                 });
 
         if (warehouse != null) {
-            String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            Long userId = userRepository.findByUsername(username).map(User::getId).orElse(null);
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Long userId = (principal instanceof CustomUserDetails) ? ((CustomUserDetails) principal).getId() : null;
 
             inventoryService.adjustStock(
                     warehouse.getId(),
@@ -100,7 +103,8 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductDTO updateProduct(Long id, Long categoryId, ProductDTO productDTO) {
         log.info("Updating product id: {}", id);
-        Product product = productRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Product product = productRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(
                         () -> new com.restaurante.backend.exception.ResourceNotFoundException("Product not found"));
 
@@ -138,13 +142,15 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Optional<ProductDTO> getProductById(Long id) {
-        return productRepository.findById(id).map(this::mapToDTO);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        return productRepository.findByIdAndTenantId(id, tenantId).map(this::mapToDTO);
     }
 
     @Override
     @Transactional
     public ProductDTO restockProduct(Long id, Integer quantityToAdd) {
-        Product product = productRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Product product = productRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(
                         () -> new com.restaurante.backend.exception.ResourceNotFoundException("Product not found"));
 
@@ -176,7 +182,8 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        productRepository.deleteByIdAndTenantId(id, tenantId);
     }
 
     private void updateInventoryForProduct(Product product, int delta, String reason) {
@@ -189,8 +196,8 @@ public class ProductServiceImpl implements ProductService {
                 });
 
         if (warehouse != null) {
-            String username = SecurityContextHolder.getContext().getAuthentication().getName();
-            Long userId = userRepository.findByUsername(username).map(User::getId).orElse(null);
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Long userId = (principal instanceof CustomUserDetails) ? ((CustomUserDetails) principal).getId() : null;
 
             inventoryService.adjustStock(
                     warehouse.getId(),

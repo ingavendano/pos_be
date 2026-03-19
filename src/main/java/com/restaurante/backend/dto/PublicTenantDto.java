@@ -11,7 +11,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PublicTenantDto {
     private String name;
+    /** Dominio/subdominio del tenant (ej. ventaloca.tupos.app) para mostrar en login. */
+    private String domain;
     private String currencySymbol;
     private String currency;
-    // can add logoUrl here if needed later
+    /**
+     * Tema visual: indigo | restaurant | retail | premium
+     * El frontend lo aplica como clase CSS en el <body>.
+     */
+    private String theme;
 }

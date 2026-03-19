@@ -4,6 +4,7 @@ import com.restaurante.backend.domain.entity.Branch;
 import com.restaurante.backend.domain.entity.Tenant;
 import com.restaurante.backend.repository.BranchRepository;
 import com.restaurante.backend.repository.TenantRepository;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.BranchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class BranchServiceImpl implements BranchService {
 
     private final BranchRepository branchRepository;
     private final TenantRepository tenantRepository;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     @Transactional
@@ -32,7 +34,8 @@ public class BranchServiceImpl implements BranchService {
     @Override
     @Transactional
     public Branch updateBranch(Long id, Branch branchDetails) {
-        Branch branch = branchRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Branch branch = branchRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new com.restaurante.backend.exception.ResourceNotFoundException("Branch not found"));
 
         branch.setName(branchDetails.getName());
@@ -44,7 +47,8 @@ public class BranchServiceImpl implements BranchService {
 
     @Override
     public Optional<Branch> getBranchById(Long id) {
-        return branchRepository.findById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        return branchRepository.findByIdAndTenantId(id, tenantId);
     }
 
     @Override
@@ -55,6 +59,7 @@ public class BranchServiceImpl implements BranchService {
     @Override
     @Transactional
     public void deleteBranch(Long id) {
-        branchRepository.deleteById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        branchRepository.deleteByIdAndTenantId(id, tenantId);
     }
 }

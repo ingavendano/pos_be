@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
@@ -13,6 +14,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Expense> findByBranchId(Long branchId);
     List<Expense> findByBranchIdAndExpenseDateBetween(Long branchId, LocalDate start, LocalDate end);
     List<Expense> findByTenantIdAndExpenseDateBetween(Long tenantId, LocalDate start, LocalDate end);
+
+    Optional<Expense> findByIdAndTenantId(Long id, Long tenantId);
+
+    void deleteByIdAndTenantId(Long id, Long tenantId);
 
     @org.springframework.data.jpa.repository.Query("SELECT SUM(e.amount) FROM Expense e " +
             "WHERE e.branch.id = :branchId AND e.expenseDate BETWEEN :start AND :end")

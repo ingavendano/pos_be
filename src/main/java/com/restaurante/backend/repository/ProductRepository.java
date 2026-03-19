@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
@@ -19,4 +20,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @EntityGraph(attributePaths = { "category", "tenant" })
     List<Product> findByTenantIdAndIsAvailableTrue(Long tenantId);
+
+    @EntityGraph(attributePaths = { "category", "tenant" })
+    Optional<Product> findByIdAndTenantId(Long id, Long tenantId);
+
+    void deleteByIdAndTenantId(Long id, Long tenantId);
 }

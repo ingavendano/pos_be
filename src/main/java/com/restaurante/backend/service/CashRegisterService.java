@@ -3,6 +3,7 @@ package com.restaurante.backend.service;
 import com.restaurante.backend.domain.entity.Branch;
 import com.restaurante.backend.domain.entity.CashRegister;
 import com.restaurante.backend.domain.entity.User;
+import com.restaurante.backend.security.CustomUserDetails;
 import com.restaurante.backend.dto.CashRegisterDto;
 import com.restaurante.backend.repository.BranchRepository;
 import com.restaurante.backend.repository.CashRegisterRepository;
@@ -115,6 +116,13 @@ public class CashRegisterService {
     }
 
     private User getCurrentUser() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            CustomUserDetails details = (CustomUserDetails) principal;
+            return userRepository.findByIdAndTenantId(details.getId(), details.getTenantId())
+                    .orElseThrow(() -> new com.restaurante.backend.exception.ResourceNotFoundException("Usuario no encontrado"));
+        }
+
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(

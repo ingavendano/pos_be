@@ -45,6 +45,15 @@ public class Tenant {
     @Builder.Default
     private Boolean isActive = true;
 
+    /**
+     * Tema visual del tenant.
+     * Valores posibles: indigo | restaurant | retail | premium
+     * Se aplica como clase CSS en el <body> del frontend.
+     */
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private String theme = "indigo";
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

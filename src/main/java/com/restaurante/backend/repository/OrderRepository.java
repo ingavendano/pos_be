@@ -62,6 +62,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = { "restaurantTable", "user", "items", "items.product" })
     Optional<Order> findWithItemsById(Long id);
 
+    @EntityGraph(attributePaths = { "restaurantTable", "user", "customer", "invoice", "items", "items.product" })
+    Optional<Order> findByIdAndTenantId(Long id, Long tenantId);
+
+    void deleteByIdAndTenantId(Long id, Long tenantId);
+
     @Query("SELECT SUM(item.quantity * p.productionCost) " +
             "FROM Invoice inv JOIN inv.order o JOIN o.items item JOIN item.product p " +
             "WHERE o.branch.id = :branchId " +

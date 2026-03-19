@@ -51,6 +51,14 @@ public class TenantFilter extends OncePerRequestFilter {
                 }
             }
 
+            // Dev fallback: when running on plain localhost (no subdomain), use the first tenant available
+            if (tenantOpt.isEmpty() && "localhost".equals(domain)) {
+                tenantOpt = tenantRepository.findAll().stream().findFirst();
+                if (tenantOpt.isPresent()) {
+                    log.info("Dev fallback: using first tenant '{}' for domain 'localhost'", tenantOpt.get().getName());
+                }
+            }
+
             if (tenantOpt.isPresent()) {
                 TenantContext.setCurrentTenant(tenantOpt.get());
                 log.debug("Identified tenant: {} for domain: {}", tenantOpt.get().getName(), domain);

@@ -11,10 +11,11 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    /** Login y /me: cargar rol y permisos para que el usuario tenga todos los permisos actualizados. */
+    @EntityGraph(attributePaths = { "role", "role.permissions", "tenant", "branch" })
     Optional<User> findByUsernameAndTenantId(String username, Long tenantId);
 
-    // Used during JWT authentication — eagerly load everything needed for security
-    // context
+    // Used when no tenant in context (e.g. localhost)
     @EntityGraph(attributePaths = { "role", "role.permissions", "tenant", "branch" })
     Optional<User> findByUsername(String username);
 
@@ -27,4 +28,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByBranchId(Long branchId);
 
     boolean existsByRoleId(Long roleId);
+
+    @EntityGraph(attributePaths = { "role", "tenant", "branch" })
+    Optional<User> findByIdAndTenantId(Long id, Long tenantId);
+
+    void deleteByIdAndTenantId(Long id, Long tenantId);
 }

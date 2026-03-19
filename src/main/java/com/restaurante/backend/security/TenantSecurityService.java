@@ -29,6 +29,11 @@ public class TenantSecurityService {
         }
 
         // Fallback to authenticated user
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof CustomUserDetails) {
+            return ((CustomUserDetails) principal).getTenantId();
+        }
+
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username)
                 .map(u -> u.getTenant().getId())

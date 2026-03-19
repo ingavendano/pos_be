@@ -6,6 +6,7 @@ import com.restaurante.backend.domain.entity.Warehouse;
 import com.restaurante.backend.repository.BranchRepository;
 import com.restaurante.backend.repository.TenantRepository;
 import com.restaurante.backend.repository.WarehouseRepository;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.WarehouseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     private final WarehouseRepository warehouseRepository;
     private final BranchRepository branchRepository;
     private final TenantRepository tenantRepository;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     public List<Warehouse> getAllByTenant(Long tenantId) {
@@ -45,7 +47,8 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public Warehouse update(Long warehouseId, String name, String description) {
-        Warehouse warehouse = warehouseRepository.findById(warehouseId)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Warehouse warehouse = warehouseRepository.findByIdAndTenantId(warehouseId, tenantId)
                 .orElseThrow(
                         () -> new com.restaurante.backend.exception.ResourceNotFoundException("Bodega no encontrada"));
         warehouse.setName(name);
@@ -55,6 +58,7 @@ public class WarehouseServiceImpl implements WarehouseService {
 
     @Override
     public void delete(Long warehouseId) {
-        warehouseRepository.deleteById(warehouseId);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        warehouseRepository.deleteByIdAndTenantId(warehouseId, tenantId);
     }
 }

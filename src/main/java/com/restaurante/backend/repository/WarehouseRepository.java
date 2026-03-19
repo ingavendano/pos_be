@@ -11,4 +11,8 @@ public interface WarehouseRepository extends JpaRepository<Warehouse, Long> {
     List<Warehouse> findByBranchId(Long branchId);
 
     java.util.Optional<Warehouse> findFirstByBranchIdAndIsDefaultTrue(Long branchId);
+
+    java.util.Optional<Warehouse> findByIdAndTenantId(Long id, Long tenantId);
+
+    void deleteByIdAndTenantId(Long id, Long tenantId);
 }

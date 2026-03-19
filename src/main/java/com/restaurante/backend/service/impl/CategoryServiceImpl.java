@@ -5,6 +5,7 @@ import com.restaurante.backend.domain.entity.Category;
 import com.restaurante.backend.domain.entity.Tenant;
 import com.restaurante.backend.repository.CategoryRepository;
 import com.restaurante.backend.repository.TenantRepository;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final TenantRepository tenantRepository;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     @Transactional
@@ -40,7 +42,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryDTO updateCategory(Long id, CategoryDTO categoryDTO) {
-        Category category = categoryRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Category category = categoryRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(
                         () -> new com.restaurante.backend.exception.ResourceNotFoundException("Category not found"));
 
@@ -52,7 +55,8 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Optional<CategoryDTO> getCategoryById(Long id) {
-        return categoryRepository.findById(id).map(this::mapToDTO);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        return categoryRepository.findByIdAndTenantId(id, tenantId).map(this::mapToDTO);
     }
 
     @Override
@@ -65,7 +69,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void deleteCategory(Long id) {
-        categoryRepository.deleteById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        categoryRepository.deleteByIdAndTenantId(id, tenantId);
     }
 
     private CategoryDTO mapToDTO(Category category) {

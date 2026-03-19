@@ -18,6 +18,7 @@ import com.restaurante.backend.repository.UserRepository;
 import com.restaurante.backend.repository.WarehouseRepository;
 import com.restaurante.backend.repository.ProductRecipeRepository;
 import com.restaurante.backend.domain.entity.ProductRecipe;
+import com.restaurante.backend.security.TenantSecurityService;
 import com.restaurante.backend.service.InventoryService;
 import com.restaurante.backend.service.InvoiceService;
 import com.restaurante.backend.service.NotificationService;
@@ -46,6 +47,7 @@ public class OrderServiceImpl implements OrderService {
     private final InventoryService inventoryService;
     private final InvoiceService invoiceService;
     private final NotificationService notificationService;
+    private final TenantSecurityService tenantSecurityService;
 
     @Override
     @Transactional
@@ -112,7 +114,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order updateOrderStatus(Long id, String status, String paymentMethod) {
-        Order order = orderRepository.findById(id)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Order order = orderRepository.findByIdAndTenantId(id, tenantId)
                 .orElseThrow(() -> new com.restaurante.backend.exception.ResourceNotFoundException("Order not found"));
 
         if ("PAID".equals(status)) {
@@ -123,7 +126,7 @@ public class OrderServiceImpl implements OrderService {
             table.setStatus("AVAILABLE");
             tableRepository.save(table);
             // Re-fetch to return the updated entity
-            return orderRepository.findById(id).orElse(order);
+            return orderRepository.findByIdAndTenantId(id, tenantId).orElse(order);
         }
 
         order.setStatus(status);
@@ -132,7 +135,8 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Optional<Order> getOrderById(Long id) {
-        return orderRepository.findById(id);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        return orderRepository.findByIdAndTenantId(id, tenantId);
     }
 
     @Override
@@ -149,7 +153,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order addItemsToOrder(Long orderId, List<OrderItem> items) {
-        Order order = orderRepository.findById(orderId)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Order order = orderRepository.findByIdAndTenantId(orderId, tenantId)
                 .orElseThrow(() -> new com.restaurante.backend.exception.ResourceNotFoundException("Order not found"));
 
         items.forEach(item -> {
@@ -196,7 +201,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public Order updateOrder(Long orderId, Order updatedOrder) {
-        Order existingOrder = orderRepository.findById(orderId)
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Order existingOrder = orderRepository.findByIdAndTenantId(orderId, tenantId)
                 .orElseThrow(() -> new com.restaurante.backend.exception.ResourceNotFoundException(
                         "Order not found with id " + orderId));
 
@@ -286,14 +292,15 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void deleteOrder(Long id) {
-        Order order = orderRepository.findById(id).orElse(null);
+        Long tenantId = tenantSecurityService.getCurrentTenantId();
+        Order order = orderRepository.findByIdAndTenantId(id, tenantId).orElse(null);
         if (order != null) {
             order.getItems().forEach(oldItem -> {
                 processInventoryAdjustment(order.getBranch().getId(), oldItem.getProduct().getId(),
                         oldItem.getQuantity(), StockMovement.MovementType.IN,
                         "Venta: Eliminación Orden #" + order.getId() + " (Restauración)", order.getUser().getId());
             });
-            orderRepository.deleteById(id);
+            orderRepository.deleteByIdAndTenantId(id, tenantId);
         }
     }
 
