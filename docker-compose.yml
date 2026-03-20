@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./be
+      dockerfile: Dockerfile
+    environment:
+      - DB_URL=${DB_URL}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - JWT_SECRET=${JWT_SECRET}
+      - SERVER_PORT=8080
+    restart: always
+    # El backend no necesita exponer puertos al exterior, solo a través del proxy/front
+
+  frontend:
+    build:
+      context: ./fe
+      dockerfile: Dockerfile
+    restart: always
+    # El frontend tampoco necesita puertos, el proxy lo manejará
+
+  proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    depends_on:
+      - frontend
+      - backend
